@@ -11,7 +11,6 @@ function () {
 
 $.cloudinary.config({cloud_name: 'wormsetc'});
 
-
 var Dms = Ember.Application.create({
   LOG_TRANSITIONS: true,
   LOG_ACTIVE_GENERATION: true,
@@ -19,9 +18,9 @@ var Dms = Ember.Application.create({
 
 Dms.dealerConfig = ({
   tagline: "Welcome to Doc Wilson\'s cars. Your Jeep specialist.",
-  cldPreset: 'docwilsonszsugnogo',
+  cldPreset: 'docwilsonwi2jnyzb',
   siteName: "Doc Wilson\'s Cars",
-  firebase: "https://docscars.firebaseio.com/"
+  firebase: "https://dmsapi.firebaseio.com/"
 });
 
 Dms.ApplicationAdapter = DS.FirebaseAdapter.extend({
@@ -63,7 +62,15 @@ Dms.EditsController = Ember.ObjectController.extend({
 });
 
 
-
+Dms.DescriptionAreaComponent = Ember.TextArea.extend({
+  sendChange: 'acceptChanges',
+  becomeFocused: function() {
+    this.$().focus();
+  }.on('didInsertElement'),
+  accept: function() {
+    this.sendAction("sendChange");
+  }.on('focusOut'),
+});
 
 Dms.AddrInputComponent = Ember.TextField.extend({
   saveChange: 'saveAddress',
@@ -105,6 +112,15 @@ Dms.AddrAreaComponent = Ember.TextArea.extend({
   insertNewline: function() {
     this.sendAction("sendChange");
   }
+});
+
+Dms.AutoInputComponent = Ember.TextField.reopen({
+  fetchAutofilledValue: function() {
+    var $textField = this.$();
+    setTimeout( function(){
+      $textField.trigger("change")
+    }, 250);
+  }.on('didInsertElement')
 });
 
 Dms.CloudinaryView = Ember.View.extend({
@@ -164,11 +180,6 @@ Dms.PhotoController = Ember.ArrayController.extend({
 });
 
 
-
-
-
-
-
 /******************************************************************************
 //                     Vehicle Controller
 //
@@ -182,37 +193,6 @@ Dms.VehicleController = Ember.ObjectController.extend({
     pDate = this.get('purchaseDate');
     return moment(pDate, "YYYY-MM-DD").fromNow(true);
   }.property('purchaseDate'),
-  company: function() {
-    return this.get('boughtFrom.company');
-  }.property('boughtFrom.company'),
-  addr1: function() {
-    return this.get('boughtFrom.addr1');
-  }.property('boughtFrom.addr1'),
-  addr2: function() {
-    return this.get('boughtFrom.addr2');
-  }.property('boughtFrom.addr2'),
-  city: function() {
-    return this.get('boughtFrom.city');
-  }.property('boughtFrom.city'),
-  state: function() {
-    return this.get('boughtFrom.state');
-  }.property('boughtFrom.state'),
-  zipcode: function() {
-    return this.get('boughtFrom.zipcode');
-  }.property('boughtFrom.zipcode'),
-  phone: function() {
-    return this.get('boughtFrom.phone');
-  }.property('boughtFrom.phone'),
-  contact: function() {
-    return this.get('boughtFrom.contact');
-  }.property('boughtFrom.contact'),
-  email: function() {
-    return this.get('boughtFrom.email');
-  }.property('boughtFrom.email'),
-  other: function() {
-    return this.get('boughtFrom.other');
-  }.property('boughtFrom.other'),
-  isEditing: false,
   cost: function() {						// Totals cost of car including expenses 
     return this.get('paid') + this.get('expenses');
   }.property('expenses', 'paid'),
@@ -274,7 +254,6 @@ Dms.VehicleController = Ember.ObjectController.extend({
       if(isNaN(parseInt(n))) {
         n=0;
       }
-      //if(this.get('amount') ===) { console.log('empty');}
       var expense = this.store.createRecord('expense', {
         car: this.get('model'),
         itemName: this.get('itemName'),
@@ -284,9 +263,10 @@ Dms.VehicleController = Ember.ObjectController.extend({
       });
       var controller = this;
       expense.save().then(function() {
+        console.log('save');
         controller.get('model').save();
-        controller.set('itemName', '').set('amount', '')
-        .set('vendor', '');
+        /*controller.set('itemName', '').set('amount', '')
+        .set('vendor', '');*/
       });
     },
     createPhoto: function() {
@@ -313,24 +293,7 @@ Dms.VehicleController = Ember.ObjectController.extend({
     },
     saveAddress: function() {
       this.send('edit');
-      var from = this.store.createRecord('boughtFrom', {
-        company: this.get('company'),
-        contact: this.get('contact'),
-        addr1: this.get('addr1'),
-        addr2: this.get('addr2'),
-        city: this.get('city'),
-        zipcode: this.get('zipcode'),
-        state: this.get('state'),
-        phone: this.get('phone'),
-        email: this.get('email'),
-        other: this.get('other'),
-        car: this.get('model'),
-        id: this.get('id')
-      });
-      var controller = this;
-      from.save().then(function() {
-        controller.get('model').save();
-      });
+      this.get('model').save();
     }
   }
 }); 
@@ -344,6 +307,7 @@ Dms.veh = {};
 
 Dms.InventoryController = Ember.ArrayController.extend({
   unsoldCar: function() {
+    console.log('sort');
     return this.get('arrangedContent').filterProperty('isSold', false);
   }.property('content.@each', 'content.@each.isSold', 'sortProperties'),
   sortProperties: ['keyNumber'],
@@ -362,8 +326,8 @@ Dms.InventoryController = Ember.ArrayController.extend({
       this.send('vinDecode');
     }
   }.property('vin'),
-  keyNumber: function() {
-    console.log('keynumber');
+  nextKeyNumber: function() {
+    console.log('nextkeynumber');
     var allKeys = this.store.all('car');
     var keysArray = allKeys.mapBy('keyNumber');
     keysArray.push(0);
@@ -375,9 +339,11 @@ Dms.InventoryController = Ember.ArrayController.extend({
         return i;
       }
     }
-  }.property('carsCount', 'keyNumber.@each'),
-  
-
+  }.property('carsCount'),
+  keyNumber: function() {
+    console.log('keynumber');
+    return this.get('nextKeyNumber');
+  }.property('nextKeyNumber'),
   actions: {
     sortBy: function(property) {
       this.set('sortProperties', [property]);
@@ -418,7 +384,9 @@ Dms.InventoryController = Ember.ArrayController.extend({
       console.log('clearFields');
       this.set('make', '').set('vModel', '')
       .set('year', '').set('color', '').set('engine', '').set('trans', '').set('retail', '').set('trade', '')
-      .set('drive', '').set('paid', '').set('style', '').set('miles', '').set('stock', '').set('asking', '');
+      .set('drive', '').set('paid', '').set('style', '').set('miles', '').set('stock', '').set('asking', '')
+      .set('fromName', '').set('fromAddr', '').set('fromCity', '').set('fromZipcode', '').set('fromState', '')
+      .set('fromPhone', '')
     },
     addInventory: function() {
       var vehicle = this.store.createRecord('car', {
@@ -439,6 +407,12 @@ Dms.InventoryController = Ember.ArrayController.extend({
         retail: this.get('retail'),
         trade: this.get('trade'),
         purchaseDate: this.get('purchaseDate'),
+        fromName: this.get('fromName'),
+        fromAddr: this.get('fromAddr'),
+        fromCity: this.get('fromCity'),
+        fromZipcode: this.get('fromZipcode'),
+        fromState: this.get('fromState'),
+        fromPhone: this.get('fromPhone'),
         addedOn: new Date()
       });
 
@@ -661,28 +635,8 @@ Dms.SoldVehicleController = Ember.ObjectController.extend({
     },
     saveAddress: function() {
       this.send('edit');
-      var from = this.store.createRecord('boughtFrom', {
-        company: this.get('company'),
-        contact: this.get('contact'),
-        addr1: this.get('addr1'),
-        addr2: this.get('addr2'),
-        city: this.get('city'),
-        zipcode: this.get('zipcode'),
-        state: this.get('state'),
-        phone: this.get('phone'),
-        email: this.get('email'),
-        other: this.get('other'),
-        car: this.get('model'),
-        id: this.get('id')
-      });
-      var controller = this;
-      from.save().then(function() {
-        controller.get('model').save();
-      });
+      this.get('model').save();
     }
-    
-    
-    
   }
 });
     
@@ -733,6 +687,12 @@ Dms.PhotoRoute = Ember.Route.extend({
   }
 });
 
+Dms.SettingsRoute = Ember.Route.extend({
+  model: function() {
+    return this.store.find('settings');
+  }
+});
+
 /******************************************************************************
 //                     Models
 //
@@ -756,10 +716,19 @@ Dms.Car = DS.Model.extend({
   trade: DS.attr('number'),
   paid: DS.attr('number'),
   asking: DS.attr('number'),
+  carfaxURL: DS.attr('string'),
+  description: DS.attr('string'),
   purchaseDate: DS.attr('string'),
   niceDate: function() {
     return moment(this.get('purchaseDate')).format('MM-DD-YYYY');
   }.property('purchaseDate'),
+  fromName: DS.attr('string'),
+  fromAddr: DS.attr('string'),
+  fromZipcode: DS.attr('string'),
+  fromState: DS.attr('string'),
+  fromPhone: DS.attr('string'),
+  fromCity: DS.attr('string'),
+  fromOther: DS.attr('string'),
   isSold: DS.attr('boolean', {defaultValue: false}),
   dateSold: DS.attr('string'),
   niceDateSold: function() {
@@ -786,7 +755,6 @@ Dms.Car = DS.Model.extend({
     var sold = moment(this.get('dateSold'));
     return sold.diff(purchased, 'days');
   }.property('dateSold'),
-  boughtFrom: DS.belongsTo('boughtFrom', { async: true }),
   expense: DS.hasMany('expense', { async: true}),
   expenseTotal: function() {
     var exp = this.get('expense');
@@ -805,22 +773,9 @@ Dms.Car = DS.Model.extend({
   photo: DS.hasMany('photo', { async: true}),
 });
 
-Dms.BoughtFrom = DS.Model.extend({
-  car: DS.belongsTo('car', { async: true }),
-  company: DS.attr('string'),
-  contact: DS.attr('string'),
-  addr1: DS.attr('string'),
-  addr2: DS.attr('string'),
-  city: DS.attr('string'),
-  zipcode: DS.attr('string'),
-  state: DS.attr('string'),
-  phone: DS.attr('string'),
-  email: DS.attr('string'),
-  other: DS.attr('string')
-});
 
 Dms.Expense = DS.Model.extend({
-  
+  car: DS.belongsTo('car', { async: true }),
   itemName: DS.attr('string'),
   amount: DS.attr('number'),
   expensePurchaseDate: DS.attr('string'),
@@ -837,4 +792,10 @@ Dms.Photo =  DS.Model.extend({
   photoUrl: function() {
     return "http://res.cloudinary.com/wormsetc/image/upload/c_scale,w_200/v1418878423/" + this.get('cloudinaryPublicId');
   }.property('cloudinaryPublicId')
+});
+
+Dms.Settings = DS.Model.extend({
+  companyName: DS.attr('string'),
+  tagline: DS.attr('string'),
+  aboutUs: DS.attr('string'),
 });
