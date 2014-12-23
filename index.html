@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
   <head>
     <title>Dealer Management System</title>
@@ -23,22 +23,23 @@
     </script>
     <script type="text/x-handlebars" data-template-name="inventory">
       <h1>Current Inventory</h1>
-      <h4>You have {{carsCount}} vehicles in inventory</h4>
+      <h4>You have {{carsCount}} {{test}} vehicles in inventory</h4>
       <h5>Add new vehicle to inventory</h5>
       <table>
         <tr>
-          <th>Key#:</th><th>VIN:</th><th>Stock#:</th><th>Year:</th><th>Make:</th><th>Model:</th><th>Exterior Color:</th>
+          <th>Key#:{{nextKeyNumber}}</th><th>Stock#:</th><th>VIN:</th><th>Year:</th><th>Make:</th><th>Model:</th><th>Exterior Color:</th>
         </tr>
         <tr class='add_car'>
           <td>{{input valueBinding='keyNumber' id='key_in'}}</td>
-          <td>{{input valueBinding='vin' class='upper-case' id='vin_in'}}</td>
           <td>{{input valueBinding='stock' id='stock_in'}}</td>
+          <td>{{input valueBinding='vin' class='upper-case' id='vin_in'}}</td>
           <td>{{input valueBinding='year' id='year_in'}}</td>
           <td>{{input valueBinding='make' id='make_in'}}</td>
           <td>{{input valueBinding='vModel' id='model_in'}}</td>
-          <td>{{input valueBinding='color' id='color_in'}}</td>
+          <td>{{input valueBinding='color' autocomplete="on" id='color_in'}}</td>
         </tr>
       </table>
+      
       <table>
         <tr>
           <th>Transmission:</th><th>Drive Train:</th><th>Package / Engine:</th>
@@ -62,18 +63,28 @@
           <td>{{input valueBinding='asking' type='number' id='date_in'}}</td>
         </tr>
       </table>
-      
+      <table>
+        <tr class='add_car'>
+          <th>Purchased From Name:<br>{{input name="bname" valueBinding='fromName' class='medium-long'}}</th>
+          <th>Address:<br>{{input valueBinding='fromAddr' class='medium-long'}}</th>
+          <th>City:<br>{{input valueBinding='fromCity' class='medium-long'}}</th>
+          <th>State:<br>{{input valueBinding='fromState' class='short'}}</th>
+          <th>Zipcode:<br>{{input valueBinding='fromZipcode' class='short'}}</th>
+          <th>Phone:<br>{{input valueBinding='fromPhone' type='tel' class='medium'}}</th>
+        </tr>
+
+      </table>
       {{#if stock}}<p>Stock#:{{stock}} {{vin}} {{year}} {{make}} {{vModel}} {{color}} {{miles}} {{trans}} {{drive}} {{style}} </p>{{/if}}
       {{#if retail}}<p>FMV Retail:{{retail}} Trade:{{trade}}</p>{{/if}}
-      <button class="btn btn-success" {{action 'addInventory'}}>Add To Inventory</button>
-      
+      <button class="btn btn-success" type='submit' {{action 'addInventory'}}>Add To Inventory</button>
+
       <table class="table table-striped table-hover">
         <tr><th {{action 'sortBy' 'keyNumber'}} class='pointer'>Key #</th><th {{action 'sortBy' 'vin'}} class='pointer'>VIN</th>
         <th {{action 'sortBy' 'year'}} class='pointer'>Year</th><th {{action 'sortBy' 'make'}} class='pointer'>Make</th>
         <th {{action 'sortBy' 'vModel'}} class='pointer'>Model</th><th {{action 'sortBy' 'color'}} class='pointer'>Color</th>
         <th {{action 'sortBy' 'miles'}} class='pointer'>Milage</th><th {{action 'sortBy' 'drive'}} class='pointer'>Drive</th>
         <th {{action 'sortBy' 'paid'}} class='pointer'>Paid</th><th {{action 'sortBy' 'totalInvested'}} class='pointer'>Total Invested</th>
-        <th {{action 'sortBy' 'asking'}} class='pointer'>Asking</th><th {{action 'sortBy' 'daysAging'}} class='pointer'>Aging</th><th>Delete</th></tr>
+        <th {{action 'sortBy' 'asking'}} class='pointer'>Asking</th><th {{action 'sortBy' 'daysAging'}} class='pointer age'>Aging</th><th>Delete</th></tr>
         {{#each unsoldCar itemController="vehicle"}}
         <tr class='pointer upper-case' {{action 'linkToCar' this}} >
           <td>{{keyNumber}}</td>
@@ -87,7 +98,7 @@
           <td>${{paid}}</td>
           <td>${{totalInvestment}}</td>
           <td>${{asking}}</td>
-          <td>{{daysAging}}</td>
+          <td>{{daysOnLot}} Days</td>
           <td><button {{action "removeCar" this bubbles=false}} class="btn btn-danger">Delete</button></td>
         </tr>
          
@@ -442,6 +453,23 @@
           </table>
         </div>
       </div>
+      <div class="container full_width">
+        <div {{action 'edit' 'Description'}}>
+          <h3>Vehicle description for webpage</h3>
+          {{#if isEditingDescription}}
+            {{description-area class="form-control full-width" rows="3" valueBinding='description'}}
+            <button type="button" action='acceptChanges' class="btn btn-primary">Save</button>
+          {{else}}
+            {{#if description}}
+              {{description}}
+            {{else}}
+              <button type="button" class="btn btn-primary">Add Description</button>
+            {{/if}}
+          {{/if}}
+        </div>
+        <p>Carfax URL / Link:</p>
+        {{input type='text' valueBinding='carfaxURL' class='full-width'}}
+      </div>
       <div class="container right_info">
           <table class="table table-condensed table-hover table-addr">
             <tr>
@@ -449,37 +477,27 @@
                 Purchased From:
               </th>
             </tr>
-            <tr {{action 'edit' 'Company'}} >
+            <tr {{action 'edit' 'FromName'}} >
               <td colspan='3'>
                 Company:
-                {{#if isEditingCompany}}
-                  {{addr-input valueBinding='company' class='medium'}}
+                {{#if isEditingFromName}}
+                  {{addr-input valueBinding='fromName' class='medium'}}
                 {{else}}
-                  {{#if company}}
-                    {{company}}
+                  {{#if fromName}}
+                    {{fromName}}
                   {{else}}
                     click to add
                   {{/if}}
                 {{/if}}
               </td>
             </tr>
-            <tr {{action 'edit' 'Addr1'}} >
+            <tr {{action 'edit' 'Addr'}} >
               <td colspan='3'>
                 Address:
-                {{#if isEditingAddr1}}
-                  {{addr-input valueBinding='addr1'}}
+                {{#if isEditingAddr}}
+                  {{addr-input valueBinding='fromAddr'}}
                 {{else}}
-                  {{addr1}}
-                {{/if}}
-              </td>
-            </tr>
-            <tr {{action 'edit' 'Addr2'}} >
-              <td colspan='3'>
-                Address:
-                {{#if isEditingAddr2}}
-                  {{addr-input valueBinding='addr2'}}
-                {{else}}
-                  {{addr2}}
+                  {{fromAddr}}
                 {{/if}}
               </td>
             </tr>
@@ -487,63 +505,43 @@
               <td {{action 'edit' 'City'}} >
                 City: 
                 {{#if isEditingCity}}
-                  {{addr-input class='short' valueBinding='city'}}
+                  {{addr-input class='short' valueBinding='fromCity'}}
                 {{else}}
-                  {{city}}
+                  {{fromCity}}
                 {{/if}}
               </td>
               <td {{action 'edit' 'State'}} >
                 State: 
                 {{#if isEditingState}}
-                  {{addr-input class='short' valueBinding='state'}}
+                  {{addr-input class='short' valueBinding='fromState'}}
                 {{else}}
-                  {{state}}
+                  {{fromState}}
                 {{/if}}
               </td>
               <td {{action 'edit' 'Zipcode'}}>
                 Zip: 
                 {{#if isEditingZipcode}}
-                  {{addr-input class='short' valueBinding='zipcode'}}
+                  {{addr-input class='short' valueBinding='fromZipcode'}}
                 {{else}}
-                  {{zipcode}}
+                  {{fromZipcode}}
                 {{/if}}
               </td>
             </tr>
             <tr {{action 'edit' 'Phone'}} >
               <td colspan='3'>
                 {{#if isEditingPhone}}
-                  {{addr-input type='tel' valueBinding='phone'}}
+                  {{addr-input type='tel' valueBinding='fromPhone'}}
                 {{else}}
-                  {{phone}}
-                {{/if}}
-              </td>
-            </tr>
-            <tr {{action 'edit' 'Contact'}} >
-              <td colspan='3'>
-                Contact:
-                {{#if isEditingContact}}
-                  {{addr-input valueBinding='contact'}}
-                {{else}}
-                  {{contact}}
-                {{/if}}
-              </td>
-            </tr>
-            <tr {{action 'edit' 'Email'}} >
-              <td colspan='3'>
-              Email: 
-                {{#if isEditingEmail}}
-                  {{addr-input type='email' valueBinding='email'}}
-                {{else}}
-                  {{email}}
+                  {{fromPhone}}
                 {{/if}}
               </td>
             </tr>
             <tr {{action 'edit' 'Other'}} >
               <td colspan='3'>
                 {{#if isEditingOther}}
-                  {{addr-input valueBinding='other'}}
+                  {{addr-input valueBinding='fromOther'}}
                 {{else}}
-                  {{other}}
+                  {{fromOther}}
                 {{/if}}
               </td>
             </tr>
@@ -1057,10 +1055,10 @@
               <td colspan='3'>
                 Company:
                 {{#if isEditingCompany}}
-                  {{addr-input valueBinding='company' class='short'}}
+                  {{addr-input valueBinding='buyersName' class='short'}}
                 {{else}}
-                  {{#if company}}
-                    {{company}}
+                  {{#if buyersName}}
+                    {{buyersName}}
                   {{else}}
                     click to add
                   {{/if}}
