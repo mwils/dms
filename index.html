@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dealer Management System</title>
+    
+    
+    <link href="../lib/css/bootstrap.css" media="screen" rel="stylesheet"/>
+    <link href="../dms.css" media="screen" rel="stylesheet"/>
+  </head>
+
+  <body>
+    <script type="text/x-handlebars" data-template-name="application">
+      <div class="container">
+        <nav role="navigation">
+          <ul class="nav nav-tabs">
+            <li role="presentation">{{#link-to 'index'}}Website{{/link-to}}</li>
+            <li role="presentation">{{#link-to 'inventory'}}Inventory List{{/link-to}}</li>
+            <li role="presentation">{{#link-to 'soldSheet'}}Sold List{{/link-to}}</li>
+          </ul>
+        </nav>
+        {{outlet}}
+      </div>
+    </script>
+    <script type="text/x-handlebars" data-template-name="inventory">
+      <h1>Current Inventory</h1>
+      <h4>You have {{carsCount}} vehicles in inventory</h4>
+      <h5>Add new vehicle to inventory</h5>
+      <table>
+        <tr>
+          <th>Key#:</th><th>VIN:</th><th>Stock#:</th><th>Year:</th><th>Make:</th><th>Model:</th><th>Exterior Color:</th>
+        </tr>
+        <tr class='add_car'>
+          <td>{{input valueBinding='keyNumber' id='key_in'}}</td>
+          <td>{{input valueBinding='vin' class='upper-case' id='vin_in'}}</td>
+          <td>{{input valueBinding='stock' id='stock_in'}}</td>
+          <td>{{input valueBinding='year' id='year_in'}}</td>
+          <td>{{input valueBinding='make' id='make_in'}}</td>
+          <td>{{input valueBinding='vModel' id='model_in'}}</td>
+          <td>{{input valueBinding='color' id='color_in'}}</td>
+        </tr>
+      </table>
+      <table>
+        <tr>
+          <th>Transmission:</th><th>Drive Train:</th><th>Package / Engine:</th>
+          <th>Milage:</th>
+        </tr>
+        
+        <tr class='add_car'>
+          <td>{{input valueBinding='trans' id='trans_in'}}</td>
+          <td>{{input valueBinding='drive' id='drive_in'}}</td>
+          <td>{{input valueBinding='style' id='style_in'}}</td>
+          <td>{{input valueBinding='miles' id='miles_in'}}</td>
+      </table>
+      <table>
+        <tr>
+          <th>Purchase Price:</br>{{#if paid}}${{paid}}{{else}}Numbers Only{{/if}}</th><th>Purchase Date:</th>
+          <th>Asking Price:</br>{{#if asking}}${{asking}}{{else}}Numbers Only{{/if}}</th>
+        </tr>
+        <tr class='add_car'>
+          <td>{{input valueBinding='paid' type='number' id='paid_in'}}</td>
+          <td>{{input valueBinding='purchaseDate' type='date' class='medium-long'}}</td>
+          <td>{{input valueBinding='asking' type='number' id='date_in'}}</td>
+        </tr>
+      </table>
+      
+      {{#if stock}}<p>Stock#:{{stock}} {{vin}} {{year}} {{make}} {{vModel}} {{color}} {{miles}} {{trans}} {{drive}} {{style}} </p>{{/if}}
+      {{#if retail}}<p>FMV Retail:{{retail}} Trade:{{trade}}</p>{{/if}}
+      <button class="btn btn-success" {{action 'addInventory'}}>Add To Inventory</button>
+      
+      <table class="table table-striped table-hover">
+        <tr><th {{action 'sortBy' 'keyNumber'}} class='pointer'>Key #</th><th {{action 'sortBy' 'vin'}} class='pointer'>VIN</th>
+        <th {{action 'sortBy' 'year'}} class='pointer'>Year</th><th {{action 'sortBy' 'make'}} class='pointer'>Make</th>
+        <th {{action 'sortBy' 'vModel'}} class='pointer'>Model</th><th {{action 'sortBy' 'color'}} class='pointer'>Color</th>
+        <th {{action 'sortBy' 'miles'}} class='pointer'>Milage</th><th {{action 'sortBy' 'drive'}} class='pointer'>Drive</th>
+        <th {{action 'sortBy' 'paid'}} class='pointer'>Paid</th><th {{action 'sortBy' 'totalInvested'}} class='pointer'>Total Invested</th>
+        <th {{action 'sortBy' 'asking'}} class='pointer'>Asking</th><th {{action 'sortBy' 'daysAging'}} class='pointer'>Aging</th><th>Delete</th></tr>
+        {{#each unsoldCar itemController="vehicle"}}
+        <tr class='pointer upper-case' {{action 'linkToCar' this}} >
+          <td>{{keyNumber}}</td>
+          <td>{{vin}}</td>
+          <td>{{year}}</td>
+          <td>{{make}}</td>
+          <td>{{vModel}}</td>
+          <td>{{color}}</td>
+          <td>{{miles}}</td>
+          <td>{{drive}}</td>
+          <td>${{paid}}</td>
+          <td>${{totalInvestment}}</td>
+          <td>${{asking}}</td>
+          <td>{{daysAging}}</td>
+          <td><button {{action "removeCar" this bubbles=false}} class="btn btn-danger">Delete</button></td>
+        </tr>
+         
+        {{/each}}
+
+      </table>
+    {{updateInputs}}{{vinSubmit}}
+    </script>
+    <!-- 	~~	~~	~~	~~	~~	~~	VEHICLE	~~	~~	-->
+    <script type="text/x-handlebars" data-template-name="vehicle">
+      <div class='container left_info borderless'>
+        <h1 {{action 'edit' 'Stock'}}>
+          Stock#:  
+          {{#if isEditingStock}}
+            {{value-input valueBinding='stock'}}
+          {{else}}
+            {{stock}}
+          {{/if}}
+        </h1>
+        <h2 {{action 'edit' 'KeyNumber'}}>
+        Key#: 
+        {{#if isEditingKeyNumber}}
+          {{value-input valueBinding='keyNumber'}}
+        {{else}}
+          {{keyNumber}}
+        {{/if}}  
+        </h2>
+        <h3>
+        <div class='inline' {{action 'edit' 'Year'}}>
+          {{#if isEditingYear}}
+            {{value-input valueBinding='year' class='short'}}
+          {{else}}
+            {{#if year}}
+              {{year}}
+            {{else}}
+              YEAR
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'Make'}}>
+          {{#if isEditingMake}}
+            {{value-input valueBinding='make'}}
+          {{else}}
+            {{#if make}}
+              {{make}}
+            {{else}}
+              MAKE
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'VModel'}}>
+          {{#if isEditingVModel}}
+            {{value-input valueBinding='vModel'}}
+          {{else}}
+            {{#if vModel}}
+              {{vModel}}
+            {{else}}
+              MODEL
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'Color'}}>
+          {{#if isEditingColor}}
+            {{value-input valueBinding='color'}}
+          {{else}}
+            {{#if color}}
+              {{color}}
+            {{else}}
+              COLOR
+            {{/if}}
+          {{/if}}
+        </div>
+        </h3>
+        <h4>
+        <div class='inline' {{action 'edit' 'Style'}}>
+          {{#if isEditingStyle}}
+            {{value-input valueBinding='style'}}
+          {{else}}
+            {{#if style}}
+              {{style}}
+            {{else}}
+              TRIM
+            {{/if}}
+          {{/if}}
+        </div>
+        </h4>
+        <h5>
+        <div class='inline' {{action 'edit' 'Vin'}}>
+          {{#if isEditingVin}}
+            {{value-input valueBinding='vin'}}
+          {{else}}
+            {{#if vin}}
+              {{vin}}
+            {{else}}
+              VIN
+            {{/if}}
+          {{/if}}
+        </div>
+        </h5>
+      </div>
+      <div class='container right_info borderless'>
+        <h3 {{action 'edit' 'PurchaseDate'}}>Puchase Date:
+          {{#if isEditingPurchaseDate}}
+            {{value-input valueBinding='purchaseDate' type='date'}}
+          {{else}}
+            {{niceDate}}
+          {{/if}}
+          <br>
+          Days Aging: {{daysAging}}
+        </h3>
+        <h4>
+          Total Investment: ${{totalInvestment}}
+        </h4>
+        {{#if selling}}
+        <button {{action "cancelSale"}} class="btn btn-warning">Cancel Sale</button>
+        {{else}}
+        <button {{action "sell"}} class="btn btn-primary">Sell</button>
+        {{/if}}
+      </div>
+      <div class='clearfix'>
+      </div>
+        {{outlet}}
+      <div class='container'>
+        <div class="container left_info">
+          
+          <table class="table table-striped table-hover">
+            <tr>
+              <th class='table_heading' colspan='2'>
+                Vehicle Details
+              </th>
+            <tr {{action 'edit' 'Miles'}}>
+              <td>
+                Milage:
+              </td>
+                <td>
+                {{#if isEditingMiles}}
+                  {{value-input type='number' valueBinding='miles'}}
+                {{else}}
+                  {{miles}}
+                </td>
+              {{/if}} 
+            </tr>
+            <tr {{action 'edit' 'Engine'}}>
+              <td>
+                Engine:
+              </td>
+              <td>
+              {{#if isEditingEngine}}
+                {{value-input type='text' valueBinding='engine'}}
+              {{else}}
+                {{engine}}
+              </td>
+              {{/if}}
+            </tr>
+            <tr {{action 'edit' 'Trans'}}>
+              <td>
+                Transmission:
+              </td>
+                <td>
+                {{#if isEditingTrans}}
+                  {{value-input type='text' valueBinding='trans'}}
+                {{else}}
+                  {{trans}}
+                </td>
+              {{/if}} 
+            </tr>
+            <tr {{action 'edit' 'Drive'}}>
+              <td>
+                Drive Train:
+              </td>
+                <td>
+                {{#if isEditingDrive}}
+                  {{value-input type='text' valueBinding='drive'}}
+                {{else}}
+                  {{drive}}
+                </td>
+              {{/if}} 
+            </tr>
+            <tr>
+              <td {{action 'edit' 'Retail'}}>
+                Fair Market Retail:
+              </td>
+              <td {{action 'edit' 'Retail'}}>
+                ${{#if isEditingRetail}}
+                {{value-input type='text' valueBinding='retail'}}
+                {{else}}
+                {{retail}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr>
+              <td {{action 'edit' 'Trade'}}>
+                Fair Market Trade:
+              </td>
+              <td {{action 'edit' 'Trade'}}>
+                ${{#if isEditingTrade}}
+                {{value-input type='text' valueBinding='trade'}}
+                {{else}}
+                {{trade}}
+                {{/if}}
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <div div class="container right_info">
+          <table class="table table-condensed table-striped table-hover">
+            <tr>
+              <th class='table-heading' colspan='2'>
+                Financial Details
+              </th>
+            </tr>
+            <tr>
+              <td {{action 'edit' 'Paid'}}>
+                Purchase Price:
+              </td>
+              <td {{action 'edit' 'Paid'}}>
+                ${{#if isEditingPaid}}
+                {{value-input type='text' valueBinding='paid'}}
+                {{else}}
+                {{paid}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Expenses:
+              </td>
+              <td>
+                ${{expenseTotal}}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Total Investment:</strong>
+              </td>
+              <td>
+                <strong>${{totalInvestment}}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td {{action 'edit' 'Asking'}}>
+                Asking Price:
+              </td>
+              <td {{action 'edit' 'Asking'}}>
+                {{#if isEditingAsking}}
+                  ${{value-input type='text' valueBinding='asking'}}
+                {{else}}
+                  ${{asking}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Profit or loss at asking price:</strong>
+              </td>
+              <td>
+                <strong>${{profit}}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button class="btn btn-success" {{action 'calcPayments'}}>Calc Monthly Payments</button>
+              </td>
+              <td>
+                ${{payments}}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Rate:{{input type='number' class='short' valueBinding='rate'}} %
+              </td>
+              <td>
+                Length:{{input type='number' class='short' valueBinding='duration'}} Months
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class='clearfix'>
+        </div>
+        <div class="container full_width">
+          <table class="table table-condensed table-striped table-hover">
+            <tr>
+              <th class='table-heading' colspan='5'>Expenditures</th>
+            </tr>
+            <tr>
+              <th>
+                Date
+              </th>
+              <th>
+                Vendor
+              </th>
+              <th>
+                Description
+              </th>
+              <th>
+                Amount
+              </th>
+              <th>
+                Delete
+              </th>
+            </tr>
+            {{#each expense in expense}}
+            <tr>
+              <td>
+                {{expense.expensePurchaseNiceDate}}
+              </td>
+              <td>
+                {{expense.vendor}}
+              </td>
+              <td>
+                {{expense.itemName}}
+              </td>
+              <td>
+                ${{expense.amount}}
+              </td>
+              <td>
+                <button {{action "removeExpense" expense bubbles=false}} class="btn btn-danger">Delete</button>
+              </td>
+            </tr>
+            {{/each}}
+            <tr>
+              <td colspan='2'>
+              </td>
+              <td>
+                <strong>Total Expenses:</strong>
+              </td>
+              <td>
+                <strong>${{expenseTotal}}</strong>
+              </td>
+              <td>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Date:<br>{{input type='date' class='medium' valueBinding='expensePurchaseDate'}}
+              </td>
+              <td>
+                Vendor:<br>{{input type='text' valueBinding='vendor' placeholder='e.g., Acme Auto Parts'}}
+              </td>
+              <td>
+                Description:<br>{{input type='text' valueBinding='itemName' placeholder='e.g., Starter'}}
+              </td>
+              <td>
+                Amount:<br>${{input type='number' valueBinding='amount' class='short'}}
+              </td>
+              <td>
+                <button {{action 'saveExpense'}} class="btn btn-success">Add Expense</button>
+              </td>
+            </tr>
+            
+          </table>
+        </div>
+      </div>
+      <div class="container right_info">
+          <table class="table table-condensed table-hover table-addr">
+            <tr>
+              <th class='table-heading' colspan='3'>
+                Purchased From:
+              </th>
+            </tr>
+            <tr {{action 'edit' 'Company'}} >
+              <td colspan='3'>
+                Company:
+                {{#if isEditingCompany}}
+                  {{addr-input valueBinding='company' class='medium'}}
+                {{else}}
+                  {{#if company}}
+                    {{company}}
+                  {{else}}
+                    click to add
+                  {{/if}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Addr1'}} >
+              <td colspan='3'>
+                Address:
+                {{#if isEditingAddr1}}
+                  {{addr-input valueBinding='addr1'}}
+                {{else}}
+                  {{addr1}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Addr2'}} >
+              <td colspan='3'>
+                Address:
+                {{#if isEditingAddr2}}
+                  {{addr-input valueBinding='addr2'}}
+                {{else}}
+                  {{addr2}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr>
+              <td {{action 'edit' 'City'}} >
+                City: 
+                {{#if isEditingCity}}
+                  {{addr-input class='short' valueBinding='city'}}
+                {{else}}
+                  {{city}}
+                {{/if}}
+              </td>
+              <td {{action 'edit' 'State'}} >
+                State: 
+                {{#if isEditingState}}
+                  {{addr-input class='short' valueBinding='state'}}
+                {{else}}
+                  {{state}}
+                {{/if}}
+              </td>
+              <td {{action 'edit' 'Zipcode'}}>
+                Zip: 
+                {{#if isEditingZipcode}}
+                  {{addr-input class='short' valueBinding='zipcode'}}
+                {{else}}
+                  {{zipcode}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Phone'}} >
+              <td colspan='3'>
+                {{#if isEditingPhone}}
+                  {{addr-input type='tel' valueBinding='phone'}}
+                {{else}}
+                  {{phone}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Contact'}} >
+              <td colspan='3'>
+                Contact:
+                {{#if isEditingContact}}
+                  {{addr-input valueBinding='contact'}}
+                {{else}}
+                  {{contact}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Email'}} >
+              <td colspan='3'>
+              Email: 
+                {{#if isEditingEmail}}
+                  {{addr-input type='email' valueBinding='email'}}
+                {{else}}
+                  {{email}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Other'}} >
+              <td colspan='3'>
+                {{#if isEditingOther}}
+                  {{addr-input valueBinding='other'}}
+                {{else}}
+                  {{other}}
+                {{/if}}
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="container left_info">
+          {{#if uploading}}
+            <button type="button" class="btn btn-primary busy">Uploading...</button>
+          {{else}}
+            {{view 'cloudinary'}}
+          {{/if}}
+          <h1>Photos</h1>
+          {{#each photo in photo}}
+            <div class='imageBox'>
+              <img {{bind-attr src='photo.photoUrl' alt='photo.name'}} >
+              <button {{action removePhoto photo}} type="button" class="btn btn-danger btn-xs remove">REMOVE</button>
+            </div>
+          {{else}} 
+            <h4>No photos added yet.</h4>
+          {{/each}}
+        </div>
+        
+       
+    </script>
+    <script type="text/x-handlebars" data-template-name="sell">
+      <div class="container full_width">
+        <table class="table table-condensed table-striped">
+          <tr>
+            <th class='table-heading' colspan='4'>Selling Info</th>
+          </tr>
+          <tr>
+            <th>
+            Date of Sale:
+            </th>
+            <td>
+              {{input type='date' valueBinding='dateSold'}}
+            </td>
+            <th>
+              Buyers Full Name:
+            </th>
+            <td>
+              {{input type='text' valueBinding='buyersName'}}
+            </td>
+          </tr>
+          <tr>
+            <th>
+              Sale Amount:
+            </th>
+            <td>
+              ${{input type='number' valueBinding='saleAmount'}}
+            </td>
+            <th>
+              Buyers Street Address:
+            </th>
+            <td>
+              {{input type='text' valueBinding='buyersAddr'}}
+            </td>
+          </tr>
+          <tr>
+            <th>
+              Sales Tax:
+            </th>
+            <td>
+              ${{input type='number' valueBinding='salesTax'}}
+            </td>
+            <th colspan='2'>
+              City: {{input type='text' class='medium' valueBinding='buyersCity'}} State: {{input type='text'  class='short' valueBinding='buyersState'}}
+              Zipcode: {{input type='text'  class='short' valueBinding='buyersZipcode'}}
+            </th>
+          </tr>
+          <tr>
+            <th>
+              Tag & Other Fees:
+            </th>
+            <td>
+              ${{input type='number' valueBinding='fees'}}
+            </td>
+            <th colspan='2'><abbr title="Phone">P:</abbr>{{input type='tel' class='medium' valueBinding='buyersPhone'}} Email:{{input type='email' valueBinding='buyersEmail'}}
+
+          </tr>
+          <tr>
+            <th colspan='2'>
+              <h3>Grand Total:</h3>
+              <h3>${{grandTotal}}</h3>
+            </th>
+            <th colspan='2'>
+              <p>STOP! Do not check one of the following unless it applies:</p> 
+              <p {{bind-attr class="excess:text-warning:muted"}} >
+              {{input type="checkbox" valueBinding="excess" checked=excess }} I herby certify that to the best of my knowledge the odometer<br>reading reflects the amount of milage<br>in EXCESS of its mechanical limits.</p>
+              <p {{bind-attr class="inaccurate:text-warning:muted"}} >{{input type="checkbox" valueBinding="inaccurate" checked=inaccurate}} I hereby certify that the odometer reading is NOT the actual milage.<BR> WARNING: ODOMETER DISCREPANCY.</p>
+              {{#if checkWarning}}<p class="text-danger">PLEASE CHECK ONLY ONE BOX</p>{{/if}}
+              
+            </th>
+          </tr>
+          <tr>
+            <th colspan='2'>
+              <strong>Liens:</strong>
+              {{input type='text' valueBinding='liens'}}
+            </th>
+            <th colspan='2'>
+              Please verify milage: {{input type='text' valueBinding='miles'}}
+              <br>{{input type="checkbox" valueBinding="exempt" checked=exempt}}  Click If Miles Exempt{{exemptSet}}
+            </th>
+          </tr>
+          <tr>
+            <td colspan='4'>
+              <button {{action 'finalizeSale'}} class="btn btn-success">Complete Sale</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class='clearfix'>
+      </div>
+    </script>
+    <script type="text/x-handlebars" data-template-name="soldSheet">
+      <h1>Sold Sheet</h1>
+      <table class="table table-striped table-hover">
+        <tr><th>Stock#</th><th>Year</th><th>Make</th><th>Model</th><th>Color</th>
+        <th>Days On Lot</th><th>Paid</th><th>Invested</th><th>Total Investment</th><th>Sold For</th><th>Profit</th><th>Archive</th></tr>
+        {{#each soldCar}}
+        <tr class='pointer' {{action 'linkToCar' this}} >
+          <td>{{stock}}</td>
+          <td>{{year}}</td>
+          <td>{{make}}</td>
+          <td>{{vModel}}</td>
+          <td>{{color}}</td>
+          <td>{{daysOnLot}}</td>
+          <td>${{paid}}</td>
+          <td>${{expenseTotal}}</td>
+          <td>${{totalInvestment}}</td>
+          <td>${{saleAmount}}</td>
+          <td>${{profit}}</td>
+          <td><button {{action 'archive'}} class="btn btn-warning">Archive</button></td>
+        </tr>
+         
+        {{/each}}
+
+      </table>
+    </script>
+    <script type="text/x-handlebars" data-template-name="soldVehicle">
+      <div class='container left_info borderless'>
+        <h1 {{action 'edit' 'Stock'}}>
+          Reference#:  
+          {{#if isEditingStock}}
+            {{value-input valueBinding='stock' }}
+          {{else}}
+            {{stock}}
+          {{/if}}
+        </h1>
+        <h3>
+        <div class='inline' {{action 'edit' 'Year'}}>
+          {{#if isEditingYear}}
+            {{value-input valueBinding='year' class='short'}}
+          {{else}}
+            {{#if year}}
+              {{year}}
+            {{else}}
+              YEAR
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'Make'}}>
+          {{#if isEditingMake}}
+            {{value-input valueBinding='make'}}
+          {{else}}
+            {{#if make}}
+              {{make}}
+            {{else}}
+              MAKE
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'VModel'}}>
+          {{#if isEditingVModel}}
+            {{value-input valueBinding='vModel'}}
+          {{else}}
+            {{#if vModel}}
+              {{vModel}}
+            {{else}}
+              MODEL
+            {{/if}}
+          {{/if}}
+        </div>
+        <div class='inline' {{action 'edit' 'Color'}}>
+          {{#if isEditingColor}}
+            {{value-input valueBinding='color'}}
+          {{else}}
+            {{#if color}}
+              {{color}}
+            {{else}}
+              COLOR
+            {{/if}}
+          {{/if}}
+        </div>
+        </h3>
+        <h4>
+        <div class='inline' {{action 'edit' 'Vin'}}>
+          {{#if isEditingVin}}
+            {{value-input valueBinding='vin'}}
+          {{else}}
+            {{#if vin}}
+              VIN: {{vin}}
+            {{else}}
+              VIN
+            {{/if}}
+          {{/if}}
+        </div>
+        </h4>
+        {{input type='checkbox' checked=more}}
+        Show More Details
+        {{#if more}}
+          <h4>
+          <div class='inline' {{action 'edit' 'Style'}}>
+            {{#if isEditingStyle}}
+              {{value-input valueBinding='style'}}
+            {{else}}
+              {{#if style}}
+                Trim: {{style}}
+              {{else}}
+                TRIM
+              {{/if}}
+            {{/if}}
+          </div>
+          <br>
+        
+          <div class='inline'>
+            <div  {{action 'edit' 'Engine'}}>
+                {{#if isEditingEngine}}
+                  {{value-input type='text' valueBinding='engine'}}
+                {{else}}
+                  {{#if engine}}
+                    Engine: {{engine}}
+                  {{else}}
+                    Engine
+                  {{/if}}
+                {{/if}}
+            </div>
+            <div {{action 'edit' 'Trans'}}>
+              {{#if isEditingTrans}}
+               {{value-input type='text' valueBinding='trans'}}
+              {{else}}
+                {{#if trans}}
+                  Trans: {{trans}}
+                {{else}}
+                  TRANS
+                {{/if}}
+              {{/if}} 
+            </div>
+            <div  {{action 'edit' 'Drive'}}>
+              {{#if isEditingDrive}}
+                {{value-input type='text' valueBinding='drive'}}
+              {{else}}
+                {{#if drive}}
+                  Drive: {{drive}}
+                {{else}}
+                  DRIVE
+                {{/if}}
+              {{/if}} 
+            </div>
+          </div>
+          <div class='inline' {{action 'edit' 'Miles'}}>
+            {{#if isEditingMiles}}
+              {{value-input type='number' valueBinding='miles'}}
+            {{else}}
+              {{#if miles}}
+                Miles: {{miles}}
+              {{else}}
+                MILES
+              {{/if}} 
+            {{/if}}
+          </div>
+          </h4>
+        {{/if}}
+      </div>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ Sold To ~~~~~~~~~~~~~~~~ -->
+      <div class='container right_info'>
+        <table class="table table-condensed table-striped">
+          <tr>
+            <th colspan='1'>Sold To:</th>
+          </tr>
+          <tr {{action 'edit' 'BuyersName'}}>
+            <td colspan='1'>
+              {{#if isEditingBuyersName}}
+                {{value-input valueBinding='buyersName'}}
+              {{else}}
+                {{#if buyersName}}
+                  {{buyersName}}
+                {{else}}
+                  NAME
+                {{/if}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr {{action 'edit' 'BuyersAddr'}}>
+            <td>
+              {{#if isEditingBuyersAddr}}
+                {{value-input type='text' valueBinding='buyersAddr'}}
+              {{else}}
+                {{#if buyersAddr}}
+                  {{buyersAddr}}
+                {{else}}
+                  Address
+                {{/if}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span {{action 'edit' 'BuyersCity'}}>
+                {{#if isEditingBuyersCity}}
+                  {{value-input type='text' valueBinding='buyersCity' class='short'}}
+                {{else}}
+                  {{#if buyersCity}}
+                    {{buyersCity}},
+                  {{else}}
+                    CITY
+                  {{/if}}
+                {{/if}}
+              </span>
+              <span {{action 'edit' 'BuyersState'}}>
+                {{#if isEditingBuyersState}}
+                  {{value-input type='text' valueBinding='buyersState' class='short'}}
+                {{else}}
+                  {{#if buyersState}}
+                    {{buyersState}}
+                  {{else}}
+                    STATE
+                  {{/if}}
+                {{/if}}
+              </span>
+              <span {{action 'edit' 'BuyersZipcode'}}>
+                {{#if isEditingBuyersZipcode}}
+                  {{value-input type='text' valueBinding='buyersZipcode' class='short'}}
+                {{else}}
+                  {{#if buyersZipcode}}
+                    {{buyersZipcode}}
+                  {{else}}
+                    Zipcode
+                  {{/if}}
+                {{/if}}
+              </span>
+            </td>
+          </tr>
+          <tr {{action 'edit' 'BuyersPhone'}}>
+            <td>
+              <abbr title="Phone">P: </abbr>
+              {{#if isEditingBuyersPhone}}
+                {{value-input type='text' valueBinding='buyersPhone'}}
+              {{else}}
+                {{buyersPhone}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr {{action 'edit' 'BuyersEmail'}}>
+            <td>
+              Email:
+              {{#if isEditingBuyersEmail}}
+                {{value-input type='text' valueBinding='buyersEmail'}}
+              {{else}}
+                {{buyersEmail}}
+              {{/if}}
+            </td>
+          </tr>
+        </table>
+       
+      </div>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ Financial Info ~~~~~~~~~~~~~~~~ -->
+      <div class='container right_info'>
+        <table class="table table-condensed table-striped">
+          <tr>
+            <th colspan='2'>FINANCIAL INFO</th>
+          </tr>
+          <tr {{action 'edit' 'DatePurchased'}}>
+            <th>Purchased on:</th>
+            <td>
+              {{#if isEditingDatePurchased}}
+                {{value-input type='date' valueBinding='purchaseDate'}}
+              {{else}}
+                {{niceDate}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr {{action 'edit' 'DateSold'}}>
+            <th>Sold on:</th>
+            <td>
+              {{#if isEditingDateSold}}
+                {{value-input type='date' valueBinding='dateSold'}}
+              {{else}}
+                {{niceDateSold}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr {{action 'edit' 'Paid'}}>
+            <th>
+               Purchase Price:
+            </th>
+            <td>
+              ${{#if isEditingPaid}}
+                {{value-input type='text' valueBinding='paid'}}
+              {{else}}
+                {{paid}}
+              {{/if}}
+            </td>
+          </tr>
+          <tr>
+            <th>Total Expenditures:</th><td>${{expenseTotal}}</td>
+          </tr>
+          <tr>
+            <th>Total Investment:</th><td>${{totalInvestment}}</td>
+          </tr>
+          <tr>
+            <th>Sold For:</th><td>${{saleAmount}}</td>
+          </tr>
+          <tr>
+            <th>Time on lot:</th><td>{{daysOnLot}} Days</td>
+          </tr>
+          <tr>
+            <th>Profit:</th><td>${{profit}}</td>
+          </tr>
+          <tr>
+            <th>Annual Return on investment:</th><td>{{roi}}%</td>
+          <tr/>
+        </table>
+       
+      </div>
+      <div class='clearfix'>
+      </div>
+      <div class='container'>
+        <div class="container full_width">
+          <table class="table table-condensed table-striped table-hover">
+            <tr>
+              <th class='table-heading' colspan='5'>Expenditures</th>
+            </tr>
+            <tr>
+              <th>
+                Date
+              </th>
+              <th>
+                Vendor
+              </th>
+              <th>
+                Description
+              </th>
+              <th>
+                Amount
+              </th>
+              <th>
+                Delete
+              </th>
+            </tr>
+            {{#each expense in expense}}
+            <tr>
+              <td>
+                {{expense.expensePurchaseNiceDate}}
+              </td>
+              <td>
+                {{expense.vendor}}
+              </td>
+              <td>
+                {{expense.itemName}}
+              </td>
+              <td>
+                ${{expense.amount}}
+              </td>
+              <td>
+                <button {{action "removeExpense" expense bubbles=false}} class="btn btn-danger">Delete</button>
+              </td>
+            </tr>
+            {{/each}}
+            <tr>
+              <td colspan='2'>
+              </td>
+              <td>
+                <strong>Total Expenses:</strong>
+              </td>
+              <td>
+                <strong>${{expenseTotal}}</strong>
+              </td>
+              <td>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Date:<br>{{input type='date' class='medium' valueBinding='purchaseDate'}}
+              </td>
+              <td>
+                Vendor:<br>{{input type='text' valueBinding='vendor' placeholder='e.g., Acme Auto Parts'}}
+              </td>
+              <td>
+                Description:<br>{{input type='text' valueBinding='itemName' placeholder='e.g., Starter'}}
+              </td>
+              <td>
+                Amount:<br>${{input type='number' valueBinding='amount' class='short'}}
+              </td>
+              <td>
+                <button {{action 'saveExpense'}} class="btn btn-success">Add Expense</button>
+              </td>
+            </tr>
+            
+          </table>
+        </div>
+      </div>
+      <div class="container right_info">
+          <table class="table table-condensed table-hover table-addr">
+            <tr>
+              <th class='table-heading' colspan='3'>
+                Purchased From:
+              </th>
+            </tr>
+            <tr {{action 'edit' 'Company' target="vehicle"}} >
+              <td colspan='3'>
+                Company:
+                {{#if isEditingCompany}}
+                  {{addr-input valueBinding='company' class='short'}}
+                {{else}}
+                  {{#if company}}
+                    {{company}}
+                  {{else}}
+                    click to add
+                  {{/if}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Addr1'}} >
+              <td colspan='3'>
+                Address:
+                {{#if isEditingAddr1}}
+                  {{addr-input valueBinding='addr1'}}
+                {{else}}
+                  {{addr1}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Addr2'}} >
+              <td colspan='3'>
+                Address:
+                {{#if isEditingAddr2}}
+                  {{addr-input valueBinding='addr2'}}
+                {{else}}
+                  {{addr2}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr>
+              <td {{action 'edit' 'City'}} >
+                City: 
+                {{#if isEditingCity}}
+                  {{addr-input class='short' valueBinding='city'}}
+                {{else}}
+                  {{city}}
+                {{/if}}
+              </td>
+              <td {{action 'edit' 'State'}} >
+                State: 
+                {{#if isEditingState}}
+                  {{addr-input class='short' valueBinding='state'}}
+                {{else}}
+                  {{state}}
+                {{/if}}
+              </td>
+              <td {{action 'edit' 'Zipcode'}}>
+                Zip: 
+                {{#if isEditingZipcode}}
+                  {{addr-input class='short' valueBinding='zipcode'}}
+                {{else}}
+                  {{zipcode}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Phone'}} >
+              <td colspan='3'>
+                {{#if isEditingPhone}}
+                  {{addr-input type='tel' valueBinding='phone'}}
+                {{else}}
+                  {{phone}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Contact'}} >
+              <td colspan='3'>
+                Contact:
+                {{#if isEditingContact}}
+                  {{addr-input valueBinding='contact'}}
+                {{else}}
+                  {{contact}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Email'}} >
+              <td colspan='3'>
+              Email: 
+                {{#if isEditingEmail}}
+                  {{addr-input type='email' valueBinding='email'}}
+                {{else}}
+                  {{email}}
+                {{/if}}
+              </td>
+            </tr>
+            <tr {{action 'edit' 'Other'}} >
+              <td colspan='3'>
+                {{#if isEditingOther}}
+                  {{addr-input valueBinding='other'}}
+                {{else}}
+                  {{other}}
+                {{/if}}
+              </td>
+            </tr>
+          </table>
+        </div>
+    </script>
+    <script type="text/x-handlebars" data-template-name="photo">
+      <h1>Photos</h1>
+      {{#each}}
+        <img {{bind-attr src='photoUrl' alt='name'}}>
+      {{else}} 
+        none
+      {{/each}}
+      {{#if uploading}}
+        <button type="button" class="btn btn-primary busy">Uploading...</button>
+      {{else}}
+        {{view 'cloudinary'}}
+      {{/if}}
+      
+    </script>
+    
+    <script src="../lib/js/jquery.js"></script>
+    <script src="../lib/js/handlebars.js"></script>
+    <script src="https://cdn.firebase.com/js/client/2.0.4/firebase.js"></script>
+    <script src="../lib/js/ember.min.js"></script>
+    <script src="../lib/js/ember-data.js"></script>
+    <script src="../lib/js/emberfire.js"></script>
+    <script src="../lib/js/moments.js"></script>
+    
+    <script src="../lib/js/jquery.ui.widget.js"></script>
+    <script src="../lib/js/jquery.iframe-transport.js"></script>
+    <script src="../lib/js/jquery.fileupload.js"></script>
+    <script src="../lib/js/jquery.cloudinary.js"></script>
+    <script src="app.js"></script>
+    <script src="../lib/js/bootstrap.min.js"></script>
+  </body>
+</html>
