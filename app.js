@@ -114,15 +114,6 @@ Dms.AddrAreaComponent = Ember.TextArea.extend({
   }
 });
 
-Dms.AutoInputComponent = Ember.TextField.reopen({
-  fetchAutofilledValue: function() {
-    var $textField = this.$();
-    setTimeout( function(){
-      $textField.trigger("change")
-    }, 250);
-  }.on('didInsertElement')
-});
-
 Dms.CloudinaryView = Ember.View.extend({
   tagName: 'input',
   name: 'file',
@@ -307,7 +298,6 @@ Dms.veh = {};
 
 Dms.InventoryController = Ember.ArrayController.extend({
   unsoldCar: function() {
-    console.log('sort');
     return this.get('arrangedContent').filterProperty('isSold', false);
   }.property('content.@each', 'content.@each.isSold', 'sortProperties'),
   sortProperties: ['keyNumber'],
@@ -326,8 +316,8 @@ Dms.InventoryController = Ember.ArrayController.extend({
       this.send('vinDecode');
     }
   }.property('vin'),
-  nextKeyNumber: function() {
-    console.log('nextkeynumber');
+  keyNumber: function() {
+    console.log('keynumber');
     var allKeys = this.store.all('car');
     var keysArray = allKeys.mapBy('keyNumber');
     keysArray.push(0);
@@ -339,11 +329,9 @@ Dms.InventoryController = Ember.ArrayController.extend({
         return i;
       }
     }
-  }.property('carsCount'),
-  keyNumber: function() {
-    console.log('keynumber');
-    return this.get('nextKeyNumber');
-  }.property('nextKeyNumber'),
+  }.property('carsCount', 'keyNumber.@each'),
+  
+
   actions: {
     sortBy: function(property) {
       this.set('sortProperties', [property]);
